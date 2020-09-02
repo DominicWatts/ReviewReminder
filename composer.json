@@ -1,0 +1,23 @@
+{
+    "name": "dominicwatts/reviewreminder",
+    "description": "Send email to remind customers to review products",
+    "type": "magento2-module",
+    "license": "OSL-3.0",
+    "version": "1.0.0",
+    "authors": [
+        {
+            "email": "dominic@xigen.co.uk",
+            "name": "Dominic Xigen"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "Xigen\\ReviewReminder\\": ""
+        }
+    }
+}
