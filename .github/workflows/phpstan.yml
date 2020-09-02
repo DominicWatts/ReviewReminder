@@ -5,10 +5,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - uses: MilesChou/composer-action@master
+    - uses: MilesChou/composer-action/7.1/install@master
       env:
         COMPOSER_AUTH: ${{secrets.COMPOSER_AUTH}}
       with:
-        args: install --prefer-dist --no-dev --ignore-platform-reqs
+        args: install --prefer-dist --ignore-platform-reqs
     - name: PHPStan
       run: docker run --rm -v $PWD:/code domw/phpstan phpstan analyze ./

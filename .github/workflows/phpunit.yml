@@ -5,8 +5,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - uses: MilesChou/composer-action@master
+    - uses: MilesChou/composer-action/7.1/install@master
+      env:
+        COMPOSER_AUTH: ${{secrets.COMPOSER_AUTH}}
       with:
-        args: install    
+        args: install --prefer-dist --ignore-platform-reqs    
     - name: PHPUnit
       run: docker run --rm -v $(pwd):/code domw/phpunit:latest phpunit Test

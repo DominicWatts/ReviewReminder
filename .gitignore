@@ -1,3 +1,5 @@
 /vendor
 /.idea
 /.vscode
+/auth.json
+/composer.lock

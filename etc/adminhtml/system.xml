@@ -1,0 +1,33 @@
+<?xml version="1.0" ?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <tab id="xigen" sortOrder="500" translate="label">
+            <label>Xigen</label>
+        </tab>
+        <section id="review_reminder" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="10" translate="label">
+            <label>Review Reminder</label>
+            <tab>xigen</tab>
+            <resource>Xigen_ReviewReminder::config_xigen_reviewreminder</resource>
+            <group id="options" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="10" translate="label">
+                <label>Options</label>
+                <field id="enabled" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="10" translate="label" type="select">
+                    <label>Enabled</label>
+                    <comment>Send review reminder emails</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="remind_order_older_than" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="20" translate="label" type="text">
+                    <label>Request reviews for orders older than</label>
+                    <comment>In days. Minimum number of days is 2.</comment>
+                </field>
+                <field id="limit" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="30" translate="label" type="text">
+                    <label>Limit number of quotes to clear per run</label>
+                    <comment>Recommended number is 200. Max is 500.</comment>
+                </field>
+                <field id="cron" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="40" translate="label" type="select">
+                    <label>Cron</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>
