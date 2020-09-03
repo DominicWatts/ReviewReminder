@@ -7,9 +7,9 @@ declare(strict_types=1);
 
 namespace Xigen\ReviewReminder\Cron;
 
+use Magento\Framework\Stdlib\DateTime\DateTime;
 use Psr\Log\LoggerInterface;
 use Xigen\ReviewReminder\Helper\Order;
-use Magento\Framework\Stdlib\DateTime\DateTime;
 
 /**
  * Cleaner cron class
@@ -54,7 +54,6 @@ class Reminder
     public function execute()
     {
         if ($this->helper->isCronEnabled()) {
-
             $this->logger->info((string) __(
                 '[%1] Reminder Cronjob Start',
                 $this->dateTime->gmtDate()

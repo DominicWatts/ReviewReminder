@@ -7,18 +7,25 @@ declare(strict_types=1);
 
 namespace Xigen\ReviewReminder\Helper;
 
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Customer\Api\Data\CustomerInterfaceFactory;
+use Magento\Framework\Api\DataObjectHelper;
+use Magento\Framework\App\Area;
 use Magento\Framework\App\Helper\AbstractHelper;
 use Magento\Framework\App\Helper\Context;
 use Magento\Framework\App\ResourceConnection;
-use Magento\Store\Model\ScopeInterface;
-use Psr\Log\LoggerInterface;
 use Magento\Framework\DataObject;
-use Magento\Framework\App\Area;
-use Magento\Customer\Api\Data\CustomerInterface;
-use Magento\Customer\Api\Data\CustomerInterfaceFactory;
+use Magento\Framework\Escaper;
+use Magento\Framework\Mail\Template\TransportBuilder;
+use Magento\Framework\Translate\Inline\StateInterface;
 use Magento\Newsletter\Model\Subscriber;
+use Magento\Newsletter\Model\SubscriberFactory;
+use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\Store;
-use Laminas\Validator\EmailAddress;
+use Psr\Log\LoggerInterface;
+use Zend\Validator\EmailAddress;
 
 class Order extends AbstractHelper
 {
@@ -31,6 +38,10 @@ class Order extends AbstractHelper
 
     const MAX_LIMIT = 500;
     const MIN_OLDER_THAN = 2;
+
+    const EMAIL_SUCCESS = 1;
+    const EMAIL_ERROR_PARAM = 2;
+    const EMAIL_ERROR_EXCEPTION = 3;
 
     /**
      * @var \Psr\Log\LoggerInterface
@@ -93,21 +104,78 @@ class Order extends AbstractHelper
     protected $select;
 
     /**
+     * @var DataObjectHelper
+     */
+    private $dataObjectHelper;
+
+    /**
+     * @var SubscriberFactory
+     */
+    protected $subscriberFactory;
+
+    /**
+     * @var \Magento\Customer\Api\CustomerRepositoryInterface
+     */
+    protected $customerRepositoryInterface;
+
+    /**
+     * @var \Magento\Sales\Api\OrderRepositoryInterface
+     */
+    protected $orderRepositoryInterface;
+
+    /**
+     * @var \Magento\Framework\Translate\Inline\StateInterface
+     */
+    protected $inlineTranslation;
+
+    /**
+     * @var \Magento\Framework\Mail\Template\TransportBuilder
+     */
+    protected $transportBuilder;
+
+    /**
+     * @var \Magento\Framework\Escaper
+     */
+    protected $escaper;
+
+    /**
      * Order constructor.
-     * @param Magento\Framework\App\Helper\Context $context
-     * @param Psr\Log\LoggerInterface $logger
-     * @param Magento\Framework\App\ResourceConnection $resource
+     * @param Context $context
+     * @param LoggerInterface $logger
+     * @param ResourceConnection $resource
+     * @param CustomerInterfaceFactory $customerInterfaceFactory
+     * @param DataObjectHelper $dataObjectHelper
+     * @param SubscriberFactory $subscriberFactory
+     * @param CustomerRepositoryInterface $customerRepositoryInterface
+     * @param OrderRepositoryInterface $orderRepositoryInterface
+     * @param StateInterface $inlineTranslation
+     * @param TransportBuilder $transportBuilder
+     * @param Escaper $escaper
      */
     public function __construct(
         Context $context,
         LoggerInterface $logger,
         ResourceConnection $resource,
-        CustomerInterfaceFactory $customerInterfaceFactory
+        CustomerInterfaceFactory $customerInterfaceFactory,
+        DataObjectHelper $dataObjectHelper,
+        SubscriberFactory $subscriberFactory,
+        CustomerRepositoryInterface $customerRepositoryInterface,
+        OrderRepositoryInterface $orderRepositoryInterface,
+        StateInterface $inlineTranslation,
+        TransportBuilder $transportBuilder,
+        Escaper $escaper
     ) {
         $this->logger = $logger;
         $this->connection = $resource->getConnection();
         $this->resource = $resource;
         $this->customerInterfaceFactory = $customerInterfaceFactory;
+        $this->dataObjectHelper = $dataObjectHelper;
+        $this->subscriberFactory = $subscriberFactory;
+        $this->customerRepositoryInterface = $customerRepositoryInterface;
+        $this->orderRepositoryInterface = $orderRepositoryInterface;
+        $this->inlineTranslation = $inlineTranslation;
+        $this->transportBuilder = $transportBuilder;
+        $this->escaper = $escaper;
         parent::__construct($context);
     }
 
@@ -131,17 +199,17 @@ class Order extends AbstractHelper
      */
     public function getTableName()
     {
-        return $this->resource->getTableName('order');
+        return $this->resource->getTableName('sales_order');
     }
 
     /**
      * Get limit
      * @param int $storeId
-     * @return string
+     * @return int
      */
     public function getLimitFromConfig($storeId = null)
     {
-        return $this->scopeConfig->getValue(
+        return (int) $this->scopeConfig->getValue(
             self::CONFIG_XML_LIMIT,
             ScopeInterface::SCOPE_STORE
         );
@@ -164,11 +232,11 @@ class Order extends AbstractHelper
     /**
      * Get orders older than
      * @param int $storeId
-     * @return string
+     * @return int
      */
     public function getOrderOlderThanFromConfig($storeId = null)
     {
-        return $this->scopeConfig->getValue(
+        return (int) $this->scopeConfig->getValue(
             self::CONFIG_XML_OLDER_THAN,
             ScopeInterface::SCOPE_STORE,
             $storeId
@@ -203,20 +271,69 @@ class Order extends AbstractHelper
         );
     }
 
+    /**
+     * Send Reminder
+     * @return void
+     */
     public function sendReminder()
     {
         $result = $this->initiate()
             ->getQuery()
             ->getSelection()
             ->getResult();
-        $result = $this->getResult();
-        foreach($result as $item) {
-            var_dump($item);
-            die();
+
+        foreach ($result as $item) {
+            if ($subscriber = $this->getSubscriber($item['customer_email'])) {
+                if ($order = $this->getOrderById($item['entity_id'])) {
+
+                    $result = $this->sendTransactionalEmail([
+                        'email' => $order->getCustomerEmail(),
+                        'firstname' => $order->getCustomerFirstname(),
+                        'lastname' => $order->getCustomerLastname(),
+                        'items' => $order->getAllVisibleItems(),
+                        'store' => $order->getStoreId()
+                    ]);
+
+                    try {
+                        $order->setSentReviewRequest($result);
+                        $order->save();
+                    } catch (\Exception $e) {
+                        $this->logger->critical($e);
+                    }
+                }
+            }
         }
     }
 
- 
+    /**
+     * Get customer by Id
+     * @param int $customerId
+     * @return bool|\Magento\Customer\Api\Data\CustomerInterface
+     */
+    public function getCustomerById(int $customerId)
+    {
+        try {
+            return $this->customerRepositoryInterface->getById($customerId);
+        } catch (\Exception $e) {
+            $this->logger->critical($e);
+            return false;
+        }
+    }
+
+    /**
+     * Get order by Id
+     * @param int $orderId
+     * @return bool|\Magento\Sales\Api\Data\OrderInterface
+     */
+    public function getOrderById(int $orderId)
+    {
+        try {
+            return $this->orderRepositoryInterface->get($orderId);
+        } catch (\Exception $e) {
+            $this->logger->critical($e);
+            return false;
+        }
+    }
 
     /**
      * Build order query
@@ -227,7 +344,8 @@ class Order extends AbstractHelper
         $select = $this->connection
             ->select()
             ->from($this->getTableName())
-            ->where('NOT ISNULL(customer_id) AND customer_id != 0')
+            ->where('ISNULL(sent_review_request) OR sent_review_request < 1')
+            ->where('NOT ISNULL(customer_email) AND customer_email != ""')
             ->where('created_at < DATE_SUB(NOW(), INTERVAL ? DAY)', $this->getOrderOlderThan())
             ->limit($this->getLimit());
         $this->setSelect($select);
@@ -254,11 +372,11 @@ class Order extends AbstractHelper
     }
 
     /**
-     * Get suscription status
+     * Get subcriber
      * @param string $email
      * @return bool
      */
-    public function getIsSubscribed($email)
+    public function getSubscriber(string $email)
     {
         $validator = new EmailAddress();
         if (!$validator->isValid($email)) {
@@ -266,9 +384,9 @@ class Order extends AbstractHelper
         }
         $subscriber = $this->loadByEmail($email);
         if (!$subscriber->getId() || $subscriber->getStatus() != Subscriber::STATUS_SUBSCRIBED) {
-            return $subscriber;
+            return false;
         }
-        return true;
+        return $subscriber;
     }
 
     /**
@@ -277,9 +395,8 @@ class Order extends AbstractHelper
      * @param int $storeId
      * @return $this
      */
-    public function loadByEmail($subscriberEmail, $storeId = Store::DISTRO_STORE_ID)
+    public function loadByEmail(string $subscriberEmail, int $storeId = Store::DISTRO_STORE_ID)
     {
-        $storeId = $this->storeManager->getStore()->getId();
         $customerData = [
             'store_id' => $storeId,
             'email'=> $subscriberEmail
@@ -384,7 +501,7 @@ class Order extends AbstractHelper
     /**
      * Send transactional email
      * @param array $vars
-     * @return void
+     * @return int
      */
     public function sendTransactionalEmail($vars = [])
     {
@@ -392,7 +509,7 @@ class Order extends AbstractHelper
         $storeId = $vars['store'] ?? Store::DISTRO_STORE_ID;
 
         if (empty($vars) || !$email) {
-            return;
+            return self::EMAIL_ERROR_PARAM;
         }
 
         $this->inlineTranslation->suspend();
@@ -425,11 +542,11 @@ class Order extends AbstractHelper
 
             $this->inlineTranslation->resume();
 
-            return true;
+            return self::EMAIL_SUCCESS;
         } catch (\Exception $e) {
             $this->logger->critical($e);
         }
-        return false;
+        return self::EMAIL_ERROR_EXCEPTION;
     }
 
     /**
@@ -447,5 +564,4 @@ class Order extends AbstractHelper
     {
         $this->select = $select;
     }
-
 }

@@ -7,17 +7,18 @@ declare(strict_types=1);
 
 namespace Xigen\ReviewReminder\Console\Command;
 
-use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\OutputInterface;
+use Magento\Framework\App\Area;
+use Magento\Framework\App\State;
+use Magento\Framework\Console\Cli;
 use Magento\Framework\Filesystem\DirectoryList;
+use Magento\Framework\Stdlib\DateTime\DateTime;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\FlockStore;
-use Psr\Log\LoggerInterface;
-use Magento\Framework\Console\Cli;
-use Magento\Framework\App\Area;
+use Symfony\Component\Stopwatch\Stopwatch;
 use Xigen\ReviewReminder\Helper\Order;
 
 class Remind extends Command
@@ -47,6 +48,24 @@ class Remind extends Command
      */
     protected $helper;
 
+    /**
+     * @var \Magento\Framework\Stdlib\DateTime\DateTime
+     */
+    protected $dateTime;
+
+    /**
+     * @var \Magento\Framework\Filesystem\DirectoryList
+     */
+    protected $dir;
+
+    /**
+     * Remind constructor.
+     * @param LoggerInterface $logger
+     * @param State $state
+     * @param DateTime $dateTime
+     * @param DirectoryList $dir
+     * @param Order $helper
+     */
     public function __construct(
         LoggerInterface $logger,
         State $state,
@@ -75,6 +94,9 @@ class Remind extends Command
         $store = new FlockStore($this->dir->getPath('var'));
         $factory = new LockFactory($store);
 
+        $stopwatch = new Stopwatch();
+        $stopwatch->start('ReviewReminder');
+
         $this->output->writeln((string) __(
             "[%1] Start",
             $this->dateTime->gmtDate()
@@ -82,7 +104,6 @@ class Remind extends Command
 
         $lock = $factory->createLock('review-reminder');
         if ($lock->acquire()) {
-            
             $this->helper->sendReminder();
 
             $lock->release();
@@ -98,6 +119,9 @@ class Remind extends Command
             "[%1] Finish",
             $this->dateTime->gmtDate()
         ));
+
+        $event = $stopwatch->stop('ReviewReminder');
+        $this->output->writeln((string) $event);
 
         return Cli::RETURN_SUCCESS;
     }
