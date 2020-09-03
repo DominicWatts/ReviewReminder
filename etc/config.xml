@@ -7,6 +7,8 @@
                 <remind_order_older_than>7</remind_order_older_than>
                 <limit>200</limit>
                 <cron>0</cron>
+                <template>review_reminder_options_template</template>
+                <identity>general</identity>
             </options>
         </review_reminder>
     </default>

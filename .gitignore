@@ -3,3 +3,5 @@
 /.vscode
 /auth.json
 /composer.lock
+/build
+/.phpunit.result.cache

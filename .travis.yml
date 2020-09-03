@@ -1,0 +1,23 @@
+language: php
+php:
+  - 7.1
+  - 7.2
+  - 7.3
+  - 7.4
+
+matrix:
+  allow_failures:
+    - php: 7.1
+    - php: 7.3
+    - php: 7.4
+
+install:
+  - composer self-update
+  - composer global config http-basic.repo.magento.com d2eb3c98428210463077e4ca2b806e90 bf5d07ecb44854e94d7f78ef969d9470
+  - composer install --no-interaction
+script:
+  - mkdir -p build/logs
+  - php vendor/bin/phpunit -c phpunit.xml --coverage-clover ./build/logs/clover.xml
+
+after_success:
+  - travis_retry php vendor/bin/php-coveralls --coverage_clover=./build/logs/clover.xml -v
