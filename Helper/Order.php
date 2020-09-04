@@ -26,9 +26,11 @@ use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\Store;
 use Psr\Log\LoggerInterface;
 use Zend\Validator\EmailAddress;
+use Magento\Framework\Exception\LocalizedException;
 
 class Order extends AbstractHelper
 {
+    const CONFIG_XML_ENABLED = 'review_reminder/options/enabled';
     const CONFIG_XML_OLDER_THAN = 'review_reminder/options/remind_order_older_than';
     const CONFIG_XML_LIMIT = 'review_reminder/options/limit';
     const CONFIG_XML_CRON = 'review_reminder/options/cron';
@@ -139,6 +141,16 @@ class Order extends AbstractHelper
     protected $escaper;
 
     /**
+     * @var bool
+     */
+    protected $isEnabled;
+
+    /**
+     * @var bool
+     */
+    protected $isCronEnabled;
+
+    /**
      * Order constructor.
      * @param Context $context
      * @param LoggerInterface $logger
@@ -182,9 +194,14 @@ class Order extends AbstractHelper
     /**
      * Initiate variables
      * @return $this
+     * @throws LocalizedException
      */
     public function initiate()
     {
+        $this->setIsEnabled($this->isEnabledFromConfig());
+        if (!$this->getIsEnabled()) {
+            throw new LocalizedException(__('Review reminder disabled in config'));
+        }
         $this->setLimit(min($this->getLimitFromConfig(), self::MAX_LIMIT));
         $this->setOrderOlderThan(max($this->getOrderOlderThanFromConfig(), self::MIN_OLDER_THAN));
         $this->setStartTime(time());
@@ -211,7 +228,22 @@ class Order extends AbstractHelper
     {
         return (int) $this->scopeConfig->getValue(
             self::CONFIG_XML_LIMIT,
-            ScopeInterface::SCOPE_STORE
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * Is module enabled
+     * @param int $storeId
+     * @return string
+     */
+    public function isEnabledFromConfig($storeId = null)
+    {
+        return (bool) $this->scopeConfig->getValue(
+            self::CONFIG_XML_ENABLED,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
         );
     }
 
@@ -220,9 +252,9 @@ class Order extends AbstractHelper
      * @param int $storeId
      * @return string
      */
-    public function isCronEnabled($storeId = null)
+    public function isCronEnabledFromConfig($storeId = null)
     {
-        return $this->scopeConfig->getValue(
+        return (bool) $this->scopeConfig->getValue(
             self::CONFIG_XML_CRON,
             ScopeInterface::SCOPE_STORE,
             $storeId
@@ -273,14 +305,20 @@ class Order extends AbstractHelper
 
     /**
      * Send Reminder
-     * @return void
+     * @return int
      */
     public function sendReminder()
     {
-        $result = $this->initiate()
-            ->getQuery()
-            ->getSelection()
-            ->getResult();
+        $successCount = 0;
+        try {
+            $result = $this->initiate()
+                ->getQuery()
+                ->getSelection()
+                ->getResult();
+        } catch (\Exception $e) {
+            $this->logger->critical($e);
+            return $successCount;
+        }
 
         foreach ($result as $item) {
             if ($subscriber = $this->getSubscriber($item['customer_email'])) {
@@ -295,6 +333,9 @@ class Order extends AbstractHelper
                     ]);
 
                     try {
+                        if ($result == self::EMAIL_SUCCESS) {
+                            $successCount++;
+                        }
                         $order->setSentReviewRequest($result);
                         $order->save();
                     } catch (\Exception $e) {
@@ -303,6 +344,7 @@ class Order extends AbstractHelper
                 }
             }
         }
+        return $successCount;
     }
 
     /**
@@ -374,15 +416,16 @@ class Order extends AbstractHelper
     /**
      * Get subcriber
      * @param string $email
+     * @param int $storeId
      * @return bool
      */
-    public function getSubscriber(string $email)
+    public function getSubscriber(string $email, int $storeId = Store::DISTRO_STORE_ID)
     {
         $validator = new EmailAddress();
         if (!$validator->isValid($email)) {
             return false;
         }
-        $subscriber = $this->loadByEmail($email);
+        $subscriber = $this->loadByEmail($email, $storeId);
         if (!$subscriber->getId() || $subscriber->getStatus() != Subscriber::STATUS_SUBSCRIBED) {
             return false;
         }
@@ -563,5 +606,37 @@ class Order extends AbstractHelper
     public function setSelect(\Magento\Framework\DB\Select $select)
     {
         $this->select = $select;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isEnabled(): bool
+    {
+        return $this->isEnabled;
+    }
+
+    /**
+     * @param bool $isEnabled
+     */
+    public function setIsEnabled(bool $isEnabled)
+    {
+        $this->isEnabled = $isEnabled;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getIsCronEnabled(): bool
+    {
+        return $this->isCronEnabled;
+    }
+
+    /**
+     * @param bool $isCronEnabled
+     */
+    public function setIsCronEnabled(bool $isCronEnabled)
+    {
+        $this->isCronEnabled = $isCronEnabled;
     }
 }

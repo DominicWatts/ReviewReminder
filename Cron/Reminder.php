@@ -9,6 +9,10 @@ namespace Xigen\ReviewReminder\Cron;
 
 use Magento\Framework\Stdlib\DateTime\DateTime;
 use Psr\Log\LoggerInterface;
+use Magento\Framework\Filesystem\DirectoryList;
+use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Lock\Store\FlockStore;
+use Symfony\Component\Stopwatch\Stopwatch;
 use Xigen\ReviewReminder\Helper\Order;
 
 /**
@@ -32,6 +36,11 @@ class Reminder
     protected $dateTime;
 
     /**
+     * @var \Magento\Framework\Filesystem\DirectoryList
+     */
+    protected $dir;
+
+    /**
      * Cleaner constructor.
      * @param \Psr\Log\LoggerInterface $logger
      * @param \Xigen\QuoteCleaner\Helper\Cleaner $helper
@@ -40,11 +49,13 @@ class Reminder
     public function __construct(
         LoggerInterface $logger,
         Order $helper,
-        DateTime $dateTime
+        DateTime $dateTime,
+        DirectoryList $dir
     ) {
         $this->logger = $logger;
         $this->helper = $helper;
         $this->dateTime = $dateTime;
+        $this->dir = $dir;
     }
 
     /**
@@ -53,26 +64,35 @@ class Reminder
      */
     public function execute()
     {
-        if ($this->helper->isCronEnabled()) {
+        if ($this->helper->isCronEnabledFromConfig()) {
             $this->logger->info((string) __(
                 '[%1] Reminder Cronjob Start',
                 $this->dateTime->gmtDate()
             ));
 
-            $this->helper->sendReminder();
+            $store = new FlockStore($this->dir->getPath('var'));
+            $factory = new LockFactory($store);
 
-            $report = $this->helper->getReport();
+            $stopwatch = new Stopwatch();
+            $stopwatch->start('ReviewReminder');
+
+            $lock = $factory->createLock('review-reminder');
+
+            $result = 0;
+
+            if ($lock->acquire()) {
+                $result = $this->helper->sendReminder();
+                $lock->release();
+            }
+
+            $event = $stopwatch->stop('ReviewReminder');
 
             $this->logger->info((string) __(
-                'Result: in %1 sent %2 reminder emails',
-                $report['duration'],
-                $report['count']
+                'Reminder Cronjob Finish: %1 - Sent : %2',
+                (string) $event,
+                $result
             ));
 
-            $this->logger->info((string) __(
-                '[%1] Reminder Cronjob Finish',
-                $this->dateTime->gmtDate()
-            ));
         }
     }
 }

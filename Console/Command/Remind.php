@@ -104,9 +104,15 @@ class Remind extends Command
 
         $lock = $factory->createLock('review-reminder');
         if ($lock->acquire()) {
-            $this->helper->sendReminder();
-
+            $result = $this->helper->sendReminder();
             $lock->release();
+
+            $this->output->writeln((string) __(
+                "[%1] %1 emails sent",
+                $this->dateTime->gmtDate(),
+                $result
+            ));
+
         } else {
             $this->output->writeln((string) __(
                 "[%1] Process already running",
