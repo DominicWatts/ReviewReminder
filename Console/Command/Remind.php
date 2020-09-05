@@ -112,7 +112,6 @@ class Remind extends Command
                 $this->dateTime->gmtDate(),
                 $result
             ));
-
         } else {
             $this->output->writeln((string) __(
                 "[%1] Process already running",

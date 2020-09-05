@@ -10,13 +10,14 @@ namespace Xigen\ReviewReminder\Helper;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Customer\Api\Data\CustomerInterfaceFactory;
+use Magento\Directory\Model\CurrencyFactory;
 use Magento\Framework\Api\DataObjectHelper;
 use Magento\Framework\App\Area;
 use Magento\Framework\App\Helper\AbstractHelper;
 use Magento\Framework\App\Helper\Context;
 use Magento\Framework\App\ResourceConnection;
-use Magento\Framework\DataObject;
 use Magento\Framework\Escaper;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Mail\Template\TransportBuilder;
 use Magento\Framework\Translate\Inline\StateInterface;
 use Magento\Newsletter\Model\Subscriber;
@@ -26,8 +27,6 @@ use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\Store;
 use Psr\Log\LoggerInterface;
 use Zend\Validator\EmailAddress;
-use Magento\Framework\Exception\LocalizedException;
-use Magento\Directory\Model\CurrencyFactory;
 
 class Order extends AbstractHelper
 {
@@ -647,21 +646,21 @@ class Order extends AbstractHelper
     {
         $this->isCronEnabled = $isCronEnabled;
     }
-    
-    /** 
+
+    /**
      * Format price with symbol
-     * @param float $price 
-     * @param string $symbol 
-     * @return string 
-     */ 
+     * @param float $price
+     * @param string $symbol
+     * @return string
+     */
     public function formatPrice(float $price, string $symbol): string
-    { 
-        return $this->currencyFactory 
-            ->create() 
-            ->format( 
-                $price, 
-                ['symbol' => $symbol], 
-                false 
-            ); 
+    {
+        return $this->currencyFactory
+            ->create()
+            ->format(
+                $price,
+                ['symbol' => $symbol],
+                false
+            );
     }
 }
