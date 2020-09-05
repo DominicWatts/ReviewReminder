@@ -21,7 +21,9 @@
             <p class="product-name"><?= $block->escapeHtml($_item->getName()) ?></p>
             <p class="sku"><?= $block->escapeHtml(__('SKU')) ?>: <?= $block->escapeHtml($_item->getSku()) ?></p>
             <?= $block->escapeHtml($_item->getDescription()) ?>
-            <a href="<?= $_item->getProduct()->getProductUrl(); ?>#reviews"><?= __("Leave a review"); ?></a>
+            <a href="<?= /* @noEscape */ $_item->getProduct()->getProductUrl(); ?>#reviews">
+            <?= $block->escapeHtml(__("Leave a review")); ?>
+            </a>
         </td>
         <td class="item-qty"><?= (float) $_item->getQtyOrdered() ?></td>
         <td class="item-price">

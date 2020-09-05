@@ -7,9 +7,9 @@ declare(strict_types=1);
 
 namespace Xigen\ReviewReminder\Cron;
 
+use Magento\Framework\Filesystem\DirectoryList;
 use Magento\Framework\Stdlib\DateTime\DateTime;
 use Psr\Log\LoggerInterface;
-use Magento\Framework\Filesystem\DirectoryList;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\FlockStore;
 use Symfony\Component\Stopwatch\Stopwatch;
