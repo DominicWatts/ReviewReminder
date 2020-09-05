@@ -88,11 +88,11 @@ class Reminder
             $event = $stopwatch->stop('ReviewReminder');
 
             $this->logger->info((string) __(
-                'Reminder Cronjob Finish: %1 - Sent : %2',
+                '[%1] Reminder Cronjob Finish: %2 - Sent : %3',
+                $this->dateTime->gmtDate(),
                 (string) $event,
                 $result
             ));
-
         }
     }
 }

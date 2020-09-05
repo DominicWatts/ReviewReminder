@@ -108,7 +108,7 @@ class Remind extends Command
             $lock->release();
 
             $this->output->writeln((string) __(
-                "[%1] %1 emails sent",
+                "[%1] %2 emails sent",
                 $this->dateTime->gmtDate(),
                 $result
             ));

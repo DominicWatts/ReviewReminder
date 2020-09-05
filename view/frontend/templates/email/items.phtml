@@ -1,0 +1,33 @@
+<?php $_items = $block->getItems() ?>
+<?php $helper = $block->getHelper() ?>
+<?php if ($_items): ?>
+<table class="email-items">
+    <thead>
+        <tr>
+            <th class="item-info">
+                <?= $block->escapeHtml(__('Items')) ?>
+            </th>
+            <th class="item-qty">
+                <?= $block->escapeHtml(__('Qty')) ?>
+            </th>
+            <th class="item-price">
+                <?= $block->escapeHtml(__('Price')) ?>
+            </th>
+        </tr>
+    </thead>
+    <?php foreach ($_items as $_item): ?>
+    <tr>
+        <td class="item-info">
+            <p class="product-name"><?= $block->escapeHtml($_item->getName()) ?></p>
+            <p class="sku"><?= $block->escapeHtml(__('SKU')) ?>: <?= $block->escapeHtml($_item->getSku()) ?></p>
+            <?= $block->escapeHtml($_item->getDescription()) ?>
+            <a href="<?= $_item->getProduct()->getProductUrl(); ?>#reviews"><?= __("Leave a review"); ?></a>
+        </td>
+        <td class="item-qty"><?= (float) $_item->getQtyOrdered() ?></td>
+        <td class="item-price">
+            <?= /* @noEscape */ $helper->formatPrice($_item->getPrice(), $block->getCurrency()->getCurrencySymbol()) ?>
+        </td>
+    </tr>
+    <?php endforeach; ?>
+</table>
+<?php endif; ?>

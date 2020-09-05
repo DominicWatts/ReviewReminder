@@ -27,6 +27,7 @@ use Magento\Store\Model\Store;
 use Psr\Log\LoggerInterface;
 use Zend\Validator\EmailAddress;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Directory\Model\CurrencyFactory;
 
 class Order extends AbstractHelper
 {
@@ -151,6 +152,11 @@ class Order extends AbstractHelper
     protected $isCronEnabled;
 
     /**
+     * @var \Magento\Directory\Model\CurrencyFactory
+     */
+    protected $currencyFactory;
+
+    /**
      * Order constructor.
      * @param Context $context
      * @param LoggerInterface $logger
@@ -175,7 +181,8 @@ class Order extends AbstractHelper
         OrderRepositoryInterface $orderRepositoryInterface,
         StateInterface $inlineTranslation,
         TransportBuilder $transportBuilder,
-        Escaper $escaper
+        Escaper $escaper,
+        CurrencyFactory $currencyFactory
     ) {
         $this->logger = $logger;
         $this->connection = $resource->getConnection();
@@ -188,6 +195,7 @@ class Order extends AbstractHelper
         $this->inlineTranslation = $inlineTranslation;
         $this->transportBuilder = $transportBuilder;
         $this->escaper = $escaper;
+        $this->currencyFactory = $currencyFactory;
         parent::__construct($context);
     }
 
@@ -322,14 +330,14 @@ class Order extends AbstractHelper
 
         foreach ($result as $item) {
             if ($subscriber = $this->getSubscriber($item['customer_email'])) {
-                if ($order = $this->getOrderById($item['entity_id'])) {
-
+                if ($order = $this->getOrderById((int) $item['entity_id'])) {
                     $result = $this->sendTransactionalEmail([
                         'email' => $order->getCustomerEmail(),
                         'firstname' => $order->getCustomerFirstname(),
                         'lastname' => $order->getCustomerLastname(),
                         'items' => $order->getAllVisibleItems(),
-                        'store' => $order->getStoreId()
+                        'store' => $order->getStoreId(),
+                        'currency' => $order->getOrderCurrency()
                     ]);
 
                     try {
@@ -557,9 +565,6 @@ class Order extends AbstractHelper
 
         $this->inlineTranslation->suspend();
         try {
-            $postObject = new DataObject();
-            $postObject->setData($vars);
-
             $this->transportBuilder->setTemplateIdentifier(
                 $this->getEmailTemplate($storeId)
             )->setTemplateOptions(
@@ -571,13 +576,16 @@ class Order extends AbstractHelper
                 [
                     'firstname' => $vars['firstname'] ?? null,
                     'lastname' => $vars['lastname'] ?? null,
-                    'email' => $email
+                    'email' => $email,
+                    'items' => $vars['items'] ?? null,
+                    'currency' => $vars['currency'] ?? null,
+                    'helper' => $this
                 ]
             )->setFrom(
                 $this->getEmailIdentity($storeId)
             )->addTo(
-                $this->escaper->escapeHtml($vars['email']),
-                $this->escaper->escapeHtml($vars['firstname'])
+                $this->escaper->escapeHtml($vars['email'] ?? null),
+                $this->escaper->escapeHtml($vars['firstname'] ?? null)
             );
 
             $transport = $this->transportBuilder->getTransport();
@@ -638,5 +646,22 @@ class Order extends AbstractHelper
     public function setIsCronEnabled(bool $isCronEnabled)
     {
         $this->isCronEnabled = $isCronEnabled;
+    }
+    
+    /** 
+     * Format price with symbol
+     * @param float $price 
+     * @param string $symbol 
+     * @return string 
+     */ 
+    public function formatPrice(float $price, string $symbol): string
+    { 
+        return $this->currencyFactory 
+            ->create() 
+            ->format( 
+                $price, 
+                ['symbol' => $symbol], 
+                false 
+            ); 
     }
 }

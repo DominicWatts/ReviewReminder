@@ -3,7 +3,7 @@
     <default>
         <review_reminder>
             <options>
-                <enabled>0</enabled>
+                <enabled>1</enabled>
                 <remind_order_older_than>7</remind_order_older_than>
                 <limit>200</limit>
                 <cron>0</cron>
