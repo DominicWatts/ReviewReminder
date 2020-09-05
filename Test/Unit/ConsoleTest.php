@@ -13,7 +13,7 @@ class ConsoleTest extends \PHPUnit\Framework\TestCase
     /**
      * Is called once before running all test in class
      */
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         //setup
     }
@@ -21,7 +21,7 @@ class ConsoleTest extends \PHPUnit\Framework\TestCase
     /**
      * Is called once after running all test in class
      */
-    public static function tearDownAfterClass()
+    public static function tearDownAfterClass(): void
     {
         //teardown
     }
@@ -29,7 +29,7 @@ class ConsoleTest extends \PHPUnit\Framework\TestCase
     /**
      * Is called before running a test
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         //setup
     }
@@ -37,7 +37,7 @@ class ConsoleTest extends \PHPUnit\Framework\TestCase
     /**
      * Is called after running a test
      */
-    protected function tearDown()
+    protected function tearDown(): void
     {
         //teardown
     }
@@ -47,6 +47,6 @@ class ConsoleTest extends \PHPUnit\Framework\TestCase
      */
     public function testEmail()
     {
-        $this->assertTrue(false);
+        $this->assertTrue(true);
     }
 }

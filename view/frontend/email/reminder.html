@@ -1,0 +1,20 @@
+<!--@subject {{trans "Hi %firstname, we hope you can help" firstname=$firstname}} @-->
+<!--@vars {
+"var firstname":"Firstname",
+"var lastname":"Lastname",
+"var email":"Recipient Email address",
+"var items":"Items",
+"var currency":"Currency",
+"var helper":"Helper"
+} @-->
+
+{{template config_path="design/email/header_template"}}
+
+<p class="greeting">{{trans "%firstname," firstname=$firstname}}</p>
+<p>
+    {{trans "Please help us help other customers by reviewing your products. Good or bad it would be great to hear from you."}}
+</p>
+
+{{block class='Magento\\Framework\\View\\Element\\Template' area='frontend' template='Xigen_ReviewReminder::email/items.phtml' items=$items currency=$currency helper=$helper}}
+
+{{template config_path="design/email/footer_template"}}
