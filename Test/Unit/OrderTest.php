@@ -18,6 +18,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Magento\Framework\DB\Select;
 use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Store\Model\ScopeInterface;
+use Xigen\ReviewReminder\Helper\Order;
 
 class OrderTest extends TestCase
 {
@@ -298,6 +300,20 @@ class OrderTest extends TestCase
     }
     */
 
+    public function testGetReport()
+    {
+        $var = [];
+        $this->helper->setReport($var);
+        $this->assertEquals($var, $this->helper->getReport());
+    }
+
+    public function testGetResult()
+    {
+        $var = [];
+        $this->helper->setResult($var);
+        $this->assertEquals($var, $this->helper->getResult());
+    }
+
     public function testGetLimit()
     {
         $var = 200;
@@ -324,9 +340,25 @@ class OrderTest extends TestCase
         $this->assertEquals(true, $this->helper->isEnabledFromConfig());
     }
 
+    public function testIsCronEnabledFromConfig()
+    {
+        $this->assertEquals(true, $this->helper->isCronEnabledFromConfig());
+    }
+
     public function testGetTableName()
     {
         $this->assertEquals('sales_order', $this->helper->getTableName());
+    }
+
+    public function testGetEmailTemplate()
+    {
+        $var = 'general';
+        $this->scopeConfigMock->expects($this->any())
+            ->method('getValue')
+            ->with(Order::CONFIG_XML_EMAIL_TEMPLATE, ScopeInterface::SCOPE_STORE)
+            ->will($this->returnValue($var));
+
+        $this->assertEquals($var, $this->helper->getEmailTemplate());
     }
 
     public function testGetSelect()
@@ -353,4 +385,24 @@ class OrderTest extends TestCase
         $this->helper->setIsCronEnabled(false);
         $this->assertEquals(false, $this->helper->getIsCronEnabled());
     }
+
+    /*
+    // Several configs loaded in initiate()
+    public function testIsDisabled()
+    {
+        $this->scopeConfigMock->expects($this->any())
+            ->method('getValue')
+            ->with(Order::CONFIG_XML_ENABLED, ScopeInterface::SCOPE_STORE)
+            ->will($this->returnValue(false));
+        $this->helper->initiate();
+    }
+    */
+
+    /*
+    // Factory method doesn't exist in isolation
+    public function testFormatPrice()
+    {
+        $this->assertEquals('£2.23', $this->helper->formatPrice((float) 2.229, '£'));
+    }
+    */
 }
