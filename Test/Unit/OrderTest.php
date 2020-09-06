@@ -188,118 +188,6 @@ class OrderTest extends TestCase
         );
     }
 
-    /*
-    public function testSendTransactionalEmail()
-    {
-
-    }
-    
-    public function testSetOrderOlderThan()
-    {
-
-    }
-
-    public function testGetReport()
-    {
-
-    }
-
-    public function testIsCronEnabledFromConfig()
-    {
-
-    }
-
-    public function testGetOrderById()
-    {
-
-    }
-
-    public function testGetQuery()
-    {
-
-    }
-
-    public function testGetIsEnabled()
-    {
-
-    }
-
-    public function testSetResult()
-    {
-
-    }
-
-    public function testGetLimit()
-    {
-
-    }
-
-    public function testGetSubscriber()
-    {
-
-    }
-
-    public function testSetReport()
-    {
-
-    }
-
-    public function testSendReminder()
-    {
-
-    }
-
-    public function testGetLimitFromConfig()
-    {
-
-    }
-
-    public function testGetSelection()
-    {
-
-    }
-
-    public function testGetResult()
-    {
-
-    }
-
-    public function testGetCustomerById()
-    {
-
-    }
-
-    public function testGetOrderOlderThanFromConfig()
-    {
-
-    }
-
-    public function testGetEmailTemplate()
-    {
-
-    }
-
-    public function testLoadByEmail()
-    {
-
-    }
-
-    public function testGetEmailIdentity()
-    {
-
-    }
-
-    public function testGetStartTime()
-    {
-
-    }
-
-    public function testSetLimit()
-    {
-
-    }
-    */
-
     public function testGetReport()
     {
         $var = [];
@@ -350,9 +238,20 @@ class OrderTest extends TestCase
         $this->assertEquals('sales_order', $this->helper->getTableName());
     }
 
+    public function testGetEmailIdentity()
+    {
+        $var = 'identity';
+        $this->scopeConfigMock->expects($this->any())
+            ->method('getValue')
+            ->with(Order::CONFIG_XML_EMAIL_IDENTITY, ScopeInterface::SCOPE_STORE)
+            ->will($this->returnValue($var));
+
+        $this->assertEquals($var, $this->helper->getEmailIdentity());
+    }
+
     public function testGetEmailTemplate()
     {
-        $var = 'general';
+        $var = 'review_reminder_options_template';
         $this->scopeConfigMock->expects($this->any())
             ->method('getValue')
             ->with(Order::CONFIG_XML_EMAIL_TEMPLATE, ScopeInterface::SCOPE_STORE)
@@ -384,6 +283,11 @@ class OrderTest extends TestCase
     {
         $this->helper->setIsCronEnabled(false);
         $this->assertEquals(false, $this->helper->getIsCronEnabled());
+    }
+
+    public function testGetSubscriber()
+    {
+        $this->assertEquals(false, $this->helper->getSubscriber('invalid-email'));
     }
 
     /*
