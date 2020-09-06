@@ -1,8 +1,10 @@
 parameters:
     level: 0
     autoload_directories:
+        - Cron
         - Console
         - Helper
+        - Test
     excludes_analyse:
         - 'vendor'
     ignoreErrors:

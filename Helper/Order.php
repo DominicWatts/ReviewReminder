@@ -228,85 +228,85 @@ class Order extends AbstractHelper
 
     /**
      * Get limit
-     * @param int $storeId
+     * @param null|string|bool|int|Store $store
      * @return int
      */
-    public function getLimitFromConfig($storeId = null)
+    public function getLimitFromConfig($store = null): int
     {
         return (int) $this->scopeConfig->getValue(
             self::CONFIG_XML_LIMIT,
             ScopeInterface::SCOPE_STORE,
-            $storeId
+            $store
         );
     }
 
     /**
      * Is module enabled
-     * @param int $storeId
+     * @param null|string|bool|int|Store $store
      * @return string
      */
-    public function isEnabledFromConfig($storeId = null)
+    public function isEnabledFromConfig($store = null): bool
     {
-        return (bool) $this->scopeConfig->getValue(
+        return (bool) $this->scopeConfig->isSetFlag(
             self::CONFIG_XML_ENABLED,
             ScopeInterface::SCOPE_STORE,
-            $storeId
+            $store
         );
     }
 
     /**
      * Is cron enabled
-     * @param int $storeId
+     * @param null|string|bool|int|Store $store
      * @return string
      */
-    public function isCronEnabledFromConfig($storeId = null)
+    public function isCronEnabledFromConfig($store = null): bool
     {
-        return (bool) $this->scopeConfig->getValue(
+        return (bool) $this->scopeConfig->isSetFlag(
             self::CONFIG_XML_CRON,
             ScopeInterface::SCOPE_STORE,
-            $storeId
+            $store
         );
     }
 
     /**
      * Get orders older than
-     * @param int $storeId
+     * @param null|string|bool|int|Store $store
      * @return int
      */
-    public function getOrderOlderThanFromConfig($storeId = null)
+    public function getOrderOlderThanFromConfig($store = null): int
     {
         return (int) $this->scopeConfig->getValue(
             self::CONFIG_XML_OLDER_THAN,
             ScopeInterface::SCOPE_STORE,
-            $storeId
+            $store
         );
     }
 
     /**
      * Get email template
-     * @param int $storeId
+     * @param null|string|bool|int|Store $store
      * @return string
      */
-    public function getEmailTemplate($storeId = null)
+    public function getEmailTemplate($store = null)
     {
         return $this->scopeConfig->getValue(
             self::CONFIG_XML_EMAIL_TEMPLATE,
             ScopeInterface::SCOPE_STORE,
-            $storeId
+            $store
         );
     }
 
     /**
      * Get email template
-     * @param int $storeId
+     * @param null|string|bool|int|Store $store
      * @return string
      */
-    public function getEmailIdentity($storeId = null)
+    public function getEmailIdentity($store = null)
     {
         return $this->scopeConfig->getValue(
             self::CONFIG_XML_EMAIL_IDENTITY,
             ScopeInterface::SCOPE_STORE,
-            $storeId
+            $store
         );
     }
 
