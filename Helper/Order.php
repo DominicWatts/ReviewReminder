@@ -228,7 +228,7 @@ class Order extends AbstractHelper
 
     /**
      * Get limit
-     * @param null|string|bool|int|Store $store 
+     * @param null|string|bool|int|Store $store
      * @return int
      */
     public function getLimitFromConfig($store = null): int
@@ -242,7 +242,7 @@ class Order extends AbstractHelper
 
     /**
      * Is module enabled
-     * @param int $storeId
+     * @param null|string|bool|int|Store $store
      * @return string
      */
     public function isEnabledFromConfig($store = null): bool
@@ -256,7 +256,7 @@ class Order extends AbstractHelper
 
     /**
      * Is cron enabled
-     * @param null|string|bool|int|Store $store 
+     * @param null|string|bool|int|Store $store
      * @return string
      */
     public function isCronEnabledFromConfig($store = null): bool
@@ -270,7 +270,7 @@ class Order extends AbstractHelper
 
     /**
      * Get orders older than
-     * @param null|string|bool|int|Store $store 
+     * @param null|string|bool|int|Store $store
      * @return int
      */
     public function getOrderOlderThanFromConfig($store = null): int
@@ -284,7 +284,7 @@ class Order extends AbstractHelper
 
     /**
      * Get email template
-     * @param null|string|bool|int|Store $store 
+     * @param null|string|bool|int|Store $store
      * @return string
      */
     public function getEmailTemplate($store = null)
@@ -298,7 +298,7 @@ class Order extends AbstractHelper
 
     /**
      * Get email template
-     * @param null|string|bool|int|Store $store  
+     * @param null|string|bool|int|Store $store
      * @return string
      */
     public function getEmailIdentity($store = null)
