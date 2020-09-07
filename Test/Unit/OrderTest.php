@@ -3,23 +3,23 @@
 namespace Xigen\ReviewReminder\Helper;
 
 use Magento\Customer\Api\CustomerRepositoryInterface;
-use Magento\Directory\Model\CurrencyFactory;
 use Magento\Customer\Api\Data\CustomerInterfaceFactory;
+use Magento\Directory\Model\Currency;
+use Magento\Directory\Model\CurrencyFactory;
 use Magento\Framework\Api\DataObjectHelper;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Helper\Context;
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Framework\DB\Select;
 use Magento\Framework\Escaper;
 use Magento\Framework\Mail\Template\TransportBuilder;
 use Magento\Framework\Translate\Inline\StateInterface;
 use Magento\Newsletter\Model\SubscriberFactory;
 use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Store\Model\ScopeInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
-use Magento\Framework\DB\Select;
-use Magento\Framework\DB\Adapter\AdapterInterface;
-use Magento\Store\Model\ScopeInterface;
-use Xigen\ReviewReminder\Helper\Order;
 
 class OrderTest extends TestCase
 {
@@ -102,11 +102,16 @@ class OrderTest extends TestCase
      * @var AdapterInterface|\PHPUnit\Framework\MockObject\MockObject
      */
     private $connectionMock;
-    
+
     /**
      * @var Select|\PHPUnit\Framework\MockObject\MockObject
      */
     private $selectMock;
+
+    /**
+     * @var Currency|\PHPUnit\Framework\MockObject\MockObject
+     */
+    private $currencyMock;
 
     public function setUp(): void
     {
@@ -157,9 +162,19 @@ class OrderTest extends TestCase
 
         $this->escaperMock = $this->createMock(Escaper::class);
 
+        $this->currencyMock = $this->createMock(Currency::class);
+        $this->currencyMock->expects($this->any())
+            ->method('load')
+            ->willReturnSelf();
+
         $this->currencyFactoryMock = $this->getMockBuilder(CurrencyFactory::class)
             ->disableOriginalConstructor()
+            ->setMethods(['create'])
             ->getMock();
+
+        $this->currencyFactoryMock->expects($this->any())
+            ->method('create')
+            ->willReturn($this->currencyMock);
 
         $this->scopeConfigMock = $this->getMockBuilder(ScopeConfigInterface::class)
             ->getMockForAbstractClass();
@@ -265,7 +280,7 @@ class OrderTest extends TestCase
         $this->helper->setSelect($this->createMock(Select::class));
         $this->assertInstanceOf(Select::class, $this->helper->getSelect());
     }
-    
+
     public function testInitiate()
     {
         $this->helper->initiate();
@@ -278,7 +293,7 @@ class OrderTest extends TestCase
         $this->helper->setIsEnabled(false);
         $this->assertEquals(false, $this->helper->getIsEnabled());
     }
-    
+
     public function testSetIsCronEnabled()
     {
         $this->helper->setIsCronEnabled(false);
