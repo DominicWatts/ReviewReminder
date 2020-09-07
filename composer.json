@@ -3,7 +3,7 @@
     "description": "Send email to remind customers to review products",
     "type": "magento2-module",
     "license": "OSL-3.0",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "authors": [
         {
             "email": "dominic@xigen.co.uk",
